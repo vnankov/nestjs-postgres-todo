@@ -4,8 +4,18 @@ A small todo app: React on `http://localhost:5173`, NestJS on `http://localhost:
 
 ## Run
 
+The whole stack (Postgres, API, and web) is one Compose project. Docker Desktop lists it as `nest-todo`.
+
 ```powershell
-docker compose up -d
+docker compose up -d --build
+```
+
+Open http://localhost:8080. The page is served by nginx, and `/api` is proxied to the API container. Postgres stays on host port 5433 for DBeaver. The API container is published on host port 3001, because 3000 is left free for `npm run dev`.
+
+To work on the code with hot reload instead:
+
+```powershell
+docker compose up -d postgres
 npm install
 npm run dev
 ```
