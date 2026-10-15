@@ -1,0 +1,26 @@
+name: nest-todo
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: nest-todo-postgres
+    environment:
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: todo
+      POSTGRES_DB: todo
+    ports:
+      - "5433:5432"
+    volumes:
+      - nest_todo_pg:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - track_io_timing=on
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo -d todo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  nest_todo_pg:
