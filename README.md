@@ -31,6 +31,15 @@ docker compose exec postgres psql -U todo -d todo
 
 If port 5433 is already taken, change the host port in `docker-compose.yml` and set `DATABASE_URL` to match.
 
+## Deploy on Vercel
+
+Vercel builds `api/Dockerfile.vercel` and `web/Dockerfile.vercel` and redeploys when `main` changes. Postgres stays a hosted database: Vercel does not run the `postgres` container or its volume. Local `docker compose` is unchanged.
+
+1. In the Vercel team, open **Storage** or the **Marketplace** and create a **Neon** Postgres database. Copy its connection string. It must include `sslmode=require`.
+2. Import `https://github.com/vnankov/nestjs-postgres-todo` into the team. Framework preset can stay empty; `vercel.json` selects the two containers. Production branch: `main`.
+3. In the project settings, set `DATABASE_URL` to that Neon string. Set `ALLOW_DEBUG` to `true` only if the query-plan panel should stay open on the public site.
+4. Deploy. Every merge to `main` builds both images again and publishes them together. Pull requests get a separate preview URL.
+
 ## What happens to one request
 
 ```

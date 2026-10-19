@@ -26,12 +26,14 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, adapter);
 
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: ['http://localhost:5173'] });
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://localhost:8080', /\.vercel\.app$/],
+  });
   app.enableShutdownHooks();
 
   const config = app.get(ConfigService);
-  const port = Number(config.get<string>('PORT') ?? 3000);
-  await app.listen(port);
+  const port = Number(config.get<string>('PORT') ?? (process.env.VERCEL ? 80 : 3000));
+  await app.listen(port, '0.0.0.0');
 
   Logger.log(`Listening on http://localhost:${port}/api (${adapter.getType()})`, 'Bootstrap');
 }

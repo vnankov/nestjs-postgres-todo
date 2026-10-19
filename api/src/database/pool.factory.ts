@@ -11,9 +11,11 @@ const logger = new Logger('PgPool');
 export function createPgPool(config: ConfigService): Pool {
   const connectionString = config.get<string>('DATABASE_URL') ?? DEFAULT_DATABASE_URL;
 
+  const useSsl = /sslmode=require/i.test(connectionString);
   const pool = new Pool({
     connectionString,
-    max: 10,
+    max: process.env.VERCEL ? 1 : 10,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   });
 
   pool.on('error', (error) => {

@@ -7,6 +7,10 @@ export class DebugGuard implements CanActivate {
   constructor(private readonly config: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
+    if (this.config.get<string>('ALLOW_DEBUG') === 'true') {
+      return true;
+    }
+
     const env = this.config.get<string>('NODE_ENV') ?? 'development';
     if (env !== 'production') {
       return true;

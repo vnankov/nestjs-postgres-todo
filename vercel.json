@@ -1,0 +1,18 @@
+{
+  "services": {
+    "web": {
+      "root": "web",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
+    },
+    "api": {
+      "root": "api",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
+}
