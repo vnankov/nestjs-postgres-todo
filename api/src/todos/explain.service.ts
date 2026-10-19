@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { PoolClient } from 'pg';
 import { APP_LIMITS, AppLimits } from '../common/constants';
 import { PlanSummary, PlanView } from '../common/utils/plan-summary';
 import { QueryRunner } from '../database/query-runner';
@@ -34,6 +35,8 @@ export interface ExplainReport {
 
 @Injectable()
 export class ExplainService {
+  private readonly logger = new Logger(ExplainService.name);
+
   constructor(
     private readonly todos: TodosRepository,
     private readonly runner: QueryRunner,
@@ -44,7 +47,7 @@ export class ExplainService {
     const stats = await this.todos.stats();
     const captured = await this.runner.withTransaction(async (client) => {
       await client.query(`SET LOCAL statement_timeout = '5s'`);
-      await client.query('SET LOCAL track_io_timing = on');
+      await this.enableIoTiming(client);
 
       const estimated = await client.query(`EXPLAIN (FORMAT JSON) ${OPEN_TODOS_SQL}`);
       const actual = await client.query(
@@ -79,4 +82,28 @@ export class ExplainService {
     const deleted = await this.todos.clearSamples();
     return { deleted };
   }
+
+  private async enableIoTiming(client: PoolClient): Promise<void> {
+    await client.query('SAVEPOINT track_io_timing');
+    try {
+      await client.query('SET LOCAL track_io_timing = on');
+      await client.query('RELEASE SAVEPOINT track_io_timing');
+    } catch (error) {
+      await client.query('ROLLBACK TO SAVEPOINT track_io_timing');
+      if (!isSessionParameterDenied(error)) {
+        throw error;
+      }
+      this.logger.warn(
+        'track_io_timing stayed off. The database role cannot change it, so EXPLAIN will still report buffer counts without I/O time.',
+      );
+    }
+  }
+}
+
+function isSessionParameterDenied(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return false;
+  }
+  const code = (error as { code: unknown }).code;
+  return code === '42501' || code === '55P02';
 }
